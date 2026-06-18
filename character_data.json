@@ -1,0 +1,16 @@
+{
+  "wednesday": {
+    "name": "Wednesday Addams",
+    "description": "Student at Nevermore Academy"
+  },
+
+  "enid": {
+    "name": "Enid Sinclair",
+    "description": "Werewolf and roommate"
+  },
+
+  "tyler": {
+    "name": "Tyler Galpin",
+    "description": "Barista at the Weathervane"
+  }
+}
