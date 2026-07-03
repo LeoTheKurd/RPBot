@@ -11,9 +11,8 @@ from database.memory import get_memory
 from database.memory import get_long_memory
 from database.memory import save_long_memory
 
-
-
 bot = telebot.TeleBot(BOT_TOKEN)
+
 active_character = {}
 
 with open(
@@ -134,22 +133,6 @@ def characters(message):
         text
     )
 
-@bot.message_handler(commands=["characters"])
-def characters(message):
-
-    text = "Available Characters:\n\n"
-
-    for key, character in CHARACTER_DATA.items():
-
-        text += (
-            f"{character['name']}\n"
-            f"{character['description']}\n\n"
-        )
-
-    bot.reply_to(
-        message,
-        text
-    )
 
 @bot.message_handler(commands=["character"])
 def character_menu(message):
@@ -182,6 +165,7 @@ def character_menu(message):
         "Choose a Universe",
         reply_markup=markup
     )
+
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
@@ -234,7 +218,8 @@ def callback_handler(call):
             f"You are now chatting with {CHARACTER_DATA[character_id]['name']}.",
             call.message.chat.id,
             call.message.message_id
-        )        
+        )
+
 
 @bot.message_handler(content_types=["web_app_data"])
 def handle_webapp_data(message):
@@ -258,20 +243,19 @@ def handle_webapp_data(message):
 
         return
 
-    active_character[user_id] = (
-        character_id
-    )
+    active_character[user_id] = character_id
 
     bot.send_message(
         message.chat.id,
         f"You are now chatting with {CHARACTER_DATA[character_id]['name']}."
     )
 
-    
+
 @bot.message_handler(func=lambda m: True)
 def chat(message):
 
-    print(message)
+    print("\n========== NEW MESSAGE ==========")
+    print(message.text)
 
     user_id = message.from_user.id
 
@@ -287,11 +271,17 @@ def chat(message):
         "wednesday"
     )
 
+    print(f"\nCurrent Character: {character_id}")
+
     response = generate_response(
         character_prompts[character_id],
         memory,
         message.text
     )
+
+    print("\n========== AI RESPONSE ==========")
+    print(response)
+    print("================================\n")
 
     save_memory(
         user_id,
@@ -300,7 +290,7 @@ def chat(message):
 
     save_memory(
         user_id,
-        f"Wednesday: {response}"
+        f"{CHARACTER_DATA[character_id]['name']}: {response}"
     )
 
     bot.reply_to(

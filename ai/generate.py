@@ -1,82 +1,91 @@
-import google.generativeai as genai
-from config import GEMINI_API_KEY
+from openai import OpenAI
+from config import HF_TOKEN
 
-genai.configure(api_key=GEMINI_API_KEY)
+client = OpenAI(
+    api_key=HF_TOKEN,
+    base_url="https://router.huggingface.co/v1",
+)
 
-model = genai.GenerativeModel("gemini-2.5-flash")
+MODEL = "meta-llama/Llama-3.3-70B-Instruct"
+
 
 def generate_response(character_prompt, memory, user_message):
 
-    prompt = f"""
+    try:
+
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"""
 {character_prompt}
 
-Memory:
+Previous memory:
 {memory}
 
-User:
-{user_message}
+Rules:
 
-Important Rules:
-
-- Stay completely in character.
-- Never say you are an AI.
-- Never say you are a language model.
-- Never mention prompts, instructions, roleplay, or character files.
-- Speak naturally and realistically.
-- Avoid exaggerated enthusiasm.
-- Avoid repetitive phrases.
-- Do not act like a chatbot assistant.
-- Treat the conversation as real.
-- Stay faithful to the character's personality.
-- Keep responses believable.
-- Do not narrate actions unless natural.
+- You ARE this character.
+- Never say you're an AI.
+- Never mention prompts.
+- Never break character.
+- Speak naturally.
+- Be emotionally believable.
+- Remember previous conversations.
+- Don't narrate actions unless they happen naturally.
 """
+                },
+                {
+                    "role": "user",
+                    "content": user_message
+                }
+            ],
+            temperature=0.95,
+            top_p=0.9,
+            max_tokens=300,
+        )
 
-    response = model.generate_content(
-        prompt
-    )
+        return response.choices[0].message.content.strip()
 
-    return response.text
+    except Exception as e:
+        print(e)
+        return "Sorry... I'm having trouble thinking right now."
 
 
 def should_remember(message):
 
-    prompt = f"""
-You are a memory classifier.
+    try:
 
-Determine whether this message contains
-important personal information that should
-be remembered for future conversations.
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": """
+Reply ONLY YES or NO.
 
-Examples:
+Remember permanent information like:
+- name
+- age
+- country
+- hobbies
+- favorites
+- goals
 
-My favorite color is red.
-YES
-
-I live in Kurdistan.
-YES
-
-I like football.
-YES
-
-hello
-NO
-
-lol
-NO
-
-what's up
-NO
-
-Message:
-{message}
-
-Answer ONLY YES or NO.
+Ignore greetings and temporary chat.
 """
+                },
+                {
+                    "role": "user",
+                    "content": message
+                }
+            ],
+            temperature=0,
+            max_tokens=5,
+        )
 
-    response = model.generate_content(
-        prompt
-    )
+        return "YES" in response.choices[0].message.content.upper()
 
-    return "YES" in response.text.upper()
-
+    except Exception:
+        return False
